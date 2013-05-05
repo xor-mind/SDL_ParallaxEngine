@@ -8,19 +8,14 @@
 #include <string>
 #include "typedefs.h"
 #include <math.h>
-
-/*----------------------------------------------------------
-	Definitions...
-----------------------------------------------------------*/
+#include <fstream>
 
 /* foreground and background velocities in pixels/sec */           
 #define FOREGROUND_VEL_X	100.0
 #define FOREGROUND_VEL_Y	50.0
 #define BACKGROUND_VEL		100.0
 
-/*
- * Size of the screen in pixels
- */
+// Size of the screen in pixels
 #define	SCREEN_W	320
 #define	SCREEN_H	240
 
@@ -42,92 +37,32 @@
 
 typedef char map_data_t[MAP_H+1][MAP_W+1];
 
-// foreground map
-map_data_t foreground_map = {
-/*	 0123456789ABCDEF */
-	"3333333333333333",
-	"3   2   3      3",
-	"3   222 3  222 3",
-	"3333 22     22 3",
-	"3       222    3",
-	"3   222 2 2  333",
-	"3   2 2 222    3",
-	"3   222      223",
-	"3        333   3",
-	"3  22 23 323  23",
-	"3  22 32 333  23",
-	"3            333",
-	"3 3  22 33     3",
-	"3    222  2  3 3",
-	"3  3     3   3 3",
-	"3333333333333333"
-};
+map_data_t foreground_map;
+map_data_t single_map;
+map_data_t middle_map;
+map_data_t background_map;
 
-map_data_t single_map = {
-/*	 0123456789ABCDEF */
-	"3333333333333333",
-	"3000200030000003",
-	"3000222030022203",
-	"3333022000002203",
-	"3000000022200003",
-	"3000222020200333",
-	"3000202022200003",
-	"3000222000000223",
-	"3000000003330003",
-	"3002202303230023",
-	"3002203203330023",
-	"3000000000000333",
-	"3030022033000003",
-	"3000022200200303",
-	"3003000003000303",
-	"3333333333333333"
-};
-
-/*
- * Middle level map; where the planets are.
- */
-map_data_t middle_map = {
-/*	 0123456789ABCDEF */
-	"   1    1       ",
-	"1          1   1",
-	"1 1             ",
-	"     1  1    1  ",
-	"   1   111      ",
-	"       111      ",
-	" 1     111    1 ",
-	"    1   1       ",
-	"          1     ",
-	"   1            ",
-	"        1    1  ",
-	" 1          1   ",
-	"     1          ",
-	"        1       ",
-	"  1        1    ",
-	"                "
-};
-
-/*
- * Background map.
- */
-map_data_t background_map = {
-/*	 0123456789ABCDEF */
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000",
-	"0000000000000000"
-};
+void LoadMap(map_data_t& m, std::string fileName, std::string identifier)
+{
+	std::fstream file( fileName );
+	char line[255];
+	while ( !file.eof() )
+	{
+		file.getline(line,255); 
+		if ( line == identifier ) 
+			break;
+	}
+	
+	for ( int y = 0; y < MAP_H; ++y ) 
+	{
+		file.getline(line,255); 
+		for( int x = 0; x < MAP_W; ++x )
+		{
+			m[y][x] = line[x];
+		}
+	}
+	file.close();
+}
 
 int detect_runs = 1;
 
@@ -179,6 +114,7 @@ void __do_limit_bounce(layer_t *lr)
 		 * to be totally accurate, as we're in a time
 		 * discreet system! Ain't that obvious...? ;-)
 		 */
+		float test = lr->pos_x - maxx - maxx;
 		lr->pos_x = maxx * 2 - lr->pos_x;
 	}
 	else if(lr->pos_x <= 0)
@@ -226,8 +162,6 @@ int tile_mode(char tile)
 
 int draw_tile(SDL_Surface *screen, SDL_Surface *tiles, int x, int y, char tile)
 {
-	if ( y == -10 )
-		__asm nop;
 	SDL_Rect source_rect, dest_rect;
 
 	/* Study the following expression. Typo trap! :-) */
@@ -587,6 +521,11 @@ public:
 		if(alpha)
 			SDL_SetAlpha(tiles, SDL_SRCALPHA|SDL_RLEACCEL, alpha);
 
+		LoadMap(foreground_map, "maps.txt", "foreground");
+		LoadMap(single_map, "maps.txt", "single");
+		LoadMap(middle_map, "maps.txt", "middle");
+		LoadMap(background_map, "maps.txt", "background");
+
 		// Initiate the layers
 		if(num_of_layers > 1)
 		{
@@ -630,8 +569,8 @@ public:
 		{
 			/* Set foreground scrolling speed and enable "bounce mode" */
 			layer_vel(&layers[0], FOREGROUND_VEL_X, FOREGROUND_VEL_Y);
-			if(!wrap)
-				layer_limit_bounce(&layers[0]);
+			//if(!wrap)
+			//	layer_limit_bounce(&layers[0]);
 
 			/* Link all intermediate levels to the foreground layer */
 			for(i = 1; i < num_of_layers - 1; ++i)
@@ -717,7 +656,6 @@ public:
 				peak_pixels);
 		SDL_FreeSurface(tiles);
 	}
-
 	void Verbose1()
 	{
 		if(verbose >= 1)
