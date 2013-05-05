@@ -1,10 +1,15 @@
 #include <cmath>
 #include "2Dmath.h"
 
-int round(float f) 
+//int round(float f) 
+//{
+//	return (int)( (f > 0.0f) ? floor(f + 0.5f) : ceil(f - 0.5f) );
+//}
+Vector operator * (float f, const Vector& v)
 {
-	return (int)( (f > 0.0f) ? floor(f + 0.5f) : ceil(f - 0.5f) );
+  return Vector(v.x*f,v.y*f);
 }
+
 
 // Get the Vectors Magnitude squared
 float Vector::LengthSqr() const
@@ -99,26 +104,7 @@ int Vector::operator==(const Vector& rhs)
 		return 0;
 }
 
-Rectangle::Rectangle() 
-{ 
-	left = top = right = bottom = 0; 
-}
 
-Rectangle::Rectangle(size_t left, size_t top, size_t right, size_t bottom) 
-	: left(left), top(top), right(right), bottom(bottom) {}
-
-bool Rectangle::Intersect(Rectangle& otherRect)
-{
-	if ( left <= otherRect.right && right >= otherRect.left )
-	{
-		if ( top <= otherRect.bottom && bottom >= otherRect.top )
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
 
 //// ------------------------------------------------------------------------------------------------------------- //
 //// IntVector implementation 

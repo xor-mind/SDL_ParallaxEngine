@@ -9,6 +9,7 @@
 #include "typedefs.h"
 #include <math.h>
 #include <fstream>
+#include "Entity.h"
 
 /* foreground and background velocities in pixels/sec */           
 #define FOREGROUND_VEL_X	100.0
@@ -34,6 +35,9 @@
  */
 #define	MAP_W		16
 #define	MAP_H		16
+
+#define E_START_X 1 
+#define E_START_Y 1
 
 typedef char map_data_t[MAP_H+1][MAP_W+1];
 
@@ -141,6 +145,23 @@ void __do_limit_bounce(layer_t *lr)
 #define	TM_EMPTY	0
 #define	TM_KEYED	1
 #define	TM_OPAQUE	2
+
+class TileEntity : public Entity
+{
+public:
+	TileEntity() { dim.x = TILE_W; dim.y = TILE_H; }
+	~TileEntity() {}
+	
+	void Render(SDL_Surface* screen, layer_t* l)
+	{
+		Surface::OnDraw(screen, model, (int)pos.x - l->pos_x, (int)pos.y - l->pos_y );
+	}
+	void TilePos(int x, int y)
+	{
+		pos.x = x * TILE_W;
+		pos.y = y * TILE_H;
+	}
+};
 
 /* Checks if tile is opaqe, empty or color keyed */
 int tile_mode(char tile)
@@ -435,8 +456,9 @@ class ParallaxDemo : public SDL_App
 	long	tick1, tick2; 
 	float		dt;
 	Text text;
-
+	TileEntity e;
 	uint fpsTime1, fpsTime2, fpsCounter, fpsDisplay;
+	Vector mapSpeed;
 public:
 	ParallaxDemo()
 	{
@@ -452,9 +474,19 @@ public:
 		peak_recursions = 0,
 		peak_pixels = 0;
 	}
-
+	void EntityLogic(float dt)
+	{
+		e.accel.y = 400.8f;
+		e.Logic(dt);
+	}
+	void InitEntities()
+	{
+		e.Init("avatar01.png");
+		e.TilePos( E_START_X, E_START_Y );
+	}
 	bool Init() override
 	{
+		mapSpeed = Vector(48,48);
 		fpsCounter = fpsDisplay = 0;
 		SDL_Init(SDL_INIT_VIDEO);
 
@@ -553,7 +585,7 @@ public:
 		else
 			layer_init(&layers[0], &single_map, tiles, otiles);
 
-	
+		// have each layer bounce around, no layers are linked
 		if(bounce_around && (num_of_layers > 1))
 		{
 			for(i = 0; i < num_of_layers - 1; ++i)
@@ -565,10 +597,10 @@ public:
 					layer_limit_bounce(&layers[i]);
 			}
 		}
-		else
-		{
+		else // every layer is linked to the first one and only the first
+		{    // layer is linked
 			/* Set foreground scrolling speed and enable "bounce mode" */
-			layer_vel(&layers[0], FOREGROUND_VEL_X, FOREGROUND_VEL_Y);
+			layer_vel(&layers[0], 0, 0);
 			//if(!wrap)
 			//	layer_limit_bounce(&layers[0]);
 
@@ -582,6 +614,8 @@ public:
 		text.SetColor(c);
 		text.OpenFont("consola.ttf",14);	
 
+		InitEntities();
+		
 		/* Get initial tick for time calculation */
 		fpsTime1 = tick1 = SDL_GetTicks();
 
@@ -631,6 +665,10 @@ public:
 		/* Draw "title" tile in upper left corner */
 		SDL_SetClipRect(screen, NULL);
 		//draw_tile(screen, tiles, 2, 2, '4');
+
+		EntityLogic( dt );
+
+		e.Render(screen,&layers[0]);
 
 		fpsCounter++;
 		//if ( fpsTime2 != fpsTime1 )
@@ -694,7 +732,31 @@ public:
 					peak_recursions,
 					peak_pixels);
 	}
-
+	void KeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
+	{
+		//player.KeyDown( sym, mod, unicode );
+		
+		switch ( sym )
+		{
+			case SDLK_RIGHT:layers[0].vel_x = mapSpeed.x; break;
+			case SDLK_LEFT: layers[0].vel_x = -mapSpeed.x; break;
+			case SDLK_UP: layers[0].vel_y = -mapSpeed.y; break;
+			case SDLK_DOWN: layers[0].vel_y = mapSpeed.y; break;
+				default: break;
+		}
+	}	
+	void KeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
+	{
+		//player.KeyUp( sym, mod, unicode );
+		switch ( sym )
+		{
+			case SDLK_RIGHT:layers[0].vel_x = 0; break;
+			case SDLK_LEFT: layers[0].vel_x = 0; break;
+			case SDLK_UP: layers[0].vel_y = 0; break;
+			case SDLK_DOWN: layers[0].vel_y = 0; break;
+				default: break;
+		}
+	}
 };
 
 #endif	

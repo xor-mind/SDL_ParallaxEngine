@@ -16,7 +16,7 @@ T ABS(T n)
 	return ( (n<0) ? -n : n);
 }
 
-int round(float f);
+//int round(float f);
 
 
 // essential math concepts
@@ -30,7 +30,7 @@ public:
 	Vector() {};
 
 	Vector floor() { return Vector( std::floor(x), std::floor(y) ); }
-	Vector Round() { return Vector( (float)round(x), (float)round(y) ); }
+	Vector Round() { return Vector( (x > 0.0f) ? ::floor(x + 0.5f) : ceil(x - 0.5f), (y > 0.0f) ? ::floor(y + 0.5f) : ceil(y - 0.5f) ); }
 
 	float	Length() const; // Get the Vector2D's magnitude.	
 	float	LengthSqr() const; // Get the Vector2D's magnitude squared.
@@ -68,19 +68,67 @@ public:
 	//Vector operator/ (const int rhs);
 	
 };
-
+Vector operator * (float f, const Vector& v);
+namespace math
+{
 class Rectangle
 {
 public:
 
-	Rectangle();
-	Rectangle(size_t left, size_t top, size_t right, size_t bottom);
-
+	Rectangle()
+	{ 
+		left = top = right = bottom = 0; 
+	}
+	Rectangle(int left, int top, int right, int bottom)
+		: left(left), top(top), right(right), bottom(bottom) {}
+	Rectangle(Vector pos, Vector dim)
+	{
+		left = (int)pos.x; top = (int)pos.y;
+		right = (int)(pos.x + dim.x);
+		bottom = (int)(pos.y + dim.y);
+	}
 	~Rectangle() {}
 
-	size_t left, top, right, bottom;
+	int left, top, right, bottom;
 
-	bool Intersect(Rectangle& otherRect);
+	bool Intersect(Rectangle& otherRect)
+	{
+		if ( left <= otherRect.right && right >= otherRect.left )
+		{
+			if ( top <= otherRect.bottom && bottom >= otherRect.top )
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 };
+}
 
+//// a vector that's made for ints and concrete mathematics
+//class IntVector
+//{
+//public:
+//
+//	int x, y;
+//
+//	IntVector(int x0, int y0):x(x0),y(y0){}
+//	IntVector(const Vector& v):x((int)v.x), y((int)v.y) { }
+//	IntVector() {};
+//
+//	int	LengthSqr() const; // sqrt(x^2+y^)^2;
+//	int Rect() const; // x*y;
+//
+//	// Vector Transformation Functions
+//	//void RotateVectorCounterClockwise(float angle);
+//
+//	int        operator==(const IntVector& rhs);
+//	int        operator!=(const IntVector& rhs);
+//	IntVector  operator* (const int rhs);
+//	IntVector& operator*=(const int rhs);
+//	IntVector  operator+ (const IntVector& rhs);
+//	IntVector& operator+=(const IntVector& rhs);
+//	
+//};
 #endif

@@ -73,6 +73,7 @@
   <ItemGroup>
     <ClInclude Include="2DMath.h" />
     <ClInclude Include="App.h" />
+    <ClInclude Include="Entity.h" />
     <ClInclude Include="parallax.h" />
     <ClInclude Include="SDL_app.h" />
     <ClInclude Include="SDL_event.h" />
